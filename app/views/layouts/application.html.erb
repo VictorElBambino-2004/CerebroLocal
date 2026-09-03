@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <title>CerebroLocal</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="CerebroLocal — Trivia interactiva con IA para jugar con amigos">
+    <meta name="theme-color" content="#6c5ce7">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  </head>
+
+  <body>
+    <div class="cl-shell">
+      <header class="cl-header">
+        <%= link_to root_path, style: "text-decoration:none;" do %>
+          <div class="brand">🧠 Cerebro<span>Local</span></div>
+        <% end %>
+      </header>
+
+      <div class="game-card">
+        <% if notice.present? %>
+          <div class="cl-alert cl-alert--success">✅ <%= notice %></div>
+        <% end %>
+        <% if alert.present? %>
+          <div class="cl-alert cl-alert--error">❌ <%= alert %></div>
+        <% end %>
+        <%= yield %>
+      </div>
+    </div>
+  </body>
+</html>

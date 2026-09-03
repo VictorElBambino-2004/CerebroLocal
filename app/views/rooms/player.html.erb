@@ -1,0 +1,12 @@
+<div class="cl-waiting">
+  <div class="spinner"></div>
+  <h2 style="font-size: 1.3rem; font-weight: 800; color: #1e293b; margin-bottom: 4px;">
+    👋 ¡Hola, <%= h(@player.name) %>!
+  </h2>
+  <p style="color: var(--cl-muted); font-size: 0.88rem; margin-bottom: 22px;">Estás conectado a la sala</p>
+  <div class="wpin"><%= @room.code %></div>
+  <div class="wlabel">🟢 Esperando que el anfitrión inicie el juego...</div>
+  <p style="color: var(--cl-muted); font-size: 0.8rem; margin-top: 24px;">
+    👀 Mira la pantalla principal para jugar
+  </p>
+</div>

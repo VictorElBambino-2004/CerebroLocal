@@ -1,0 +1,22 @@
+<!-- PIN Card -->
+<div class="cl-pin-card">
+  <div class="pin-label">🎮 Código para unirse</div>
+  <div class="pin-code"><%= @room.code %></div>
+  <div class="pin-url">Entra a la misma página desde otro dispositivo y usa el PIN</div>
+</div>
+
+<!-- Jugadores conectados -->
+<div class="cl-section-title">👥 Jugadores conectados (<%= @players.count %>)</div>
+<div class="cl-players-grid">
+  <% @players.each do |p| %>
+    <span class="cl-chip">🎮 <%= h(p.name) %></span>
+  <% end %>
+</div>
+
+<% if @players.empty? %>
+  <p style="color: var(--cl-muted); font-size: 0.88rem; text-align: center; margin-bottom: 20px;">
+    ⏳ Esperando que tus amigos ingresen el PIN desde sus celulares...
+  </p>
+<% end %>
+
+<%= button_to "🚀 ¡Empezar Juego!", start_room_path(@room.code), method: :post, class: "cl-btn cl-btn--emerald" %>

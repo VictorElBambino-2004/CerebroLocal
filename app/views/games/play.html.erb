@@ -1,0 +1,72 @@
+<%# Leaderboard oscuro %>
+<div class="cl-leaderboard">
+  <div class="cl-leaderboard-header">📊 Tabla de Posiciones</div>
+  <% session[:players].sort_by { |p| -p["score"] }.each_with_index do |p, i| %>
+    <div class="cl-leaderboard-row <%= 'active' if p['name'] == @current_player['name'] %>">
+      <span class="rank">#<%= i + 1 %></span>
+      <span><%= h(p["name"]) %></span>
+      <span class="pts"><%= p["score"] %> pts</span>
+    </div>
+  <% end %>
+</div>
+
+<%# Barra de progreso %>
+<div class="cl-progress-wrap">
+  <div class="cl-progress-label">
+    <span>📌 Pregunta <%= @current_question_number %> de <%= @total_questions %></span>
+    <span class="cl-badge cl-badge--turn">🎮 Turno: <%= h(@current_player["name"]) %></span>
+  </div>
+  <div class="cl-progress-track">
+    <div class="cl-progress-fill" style="width: <%= (@current_question_number.to_f / @total_questions * 100).round %>%;"></div>
+  </div>
+</div>
+
+<%# Pregunta %>
+<div class="cl-question-box">
+  <div class="cl-question-meta">
+    <span class="cl-badge cl-badge--category">🏷️ <%= @question.category %></span>
+  </div>
+  <div class="cl-question-text"><%= @question.prompt %></div>
+</div>
+
+<%# Formulario seguro — sin correctAnswer en JS %>
+<%= form_with url: answer_games_path, method: :post, local: true, id: "answer-form" do |f| %>
+  <%= f.hidden_field :question_id, value: @question.id %>
+  <input type="hidden" name="answer" id="selected-answer" value="">
+
+  <% shapes = ["▲", "◆", "●", "■"] %>
+  <div class="cl-answers-grid">
+    <% @question.options.each_with_index do |option, i| %>
+      <button type="button"
+              onclick="submitAnswer('<%= j option %>', this)"
+              class="cl-answer-btn ans-<%= i %>">
+        <span class="shape"><%= shapes[i] %></span>
+        <%= option %>
+      </button>
+    <% end %>
+  </div>
+<% end %>
+
+<script>
+  let answered = false;
+
+  function submitAnswer(val, clickedBtn) {
+    if (answered) return;
+    answered = true;
+
+    // Bloquear todos los botones y marcar visualmente la selección
+    document.querySelectorAll('.cl-answer-btn').forEach(btn => {
+      btn.disabled = true;
+      if (btn !== clickedBtn) btn.style.opacity = '0.4';
+    });
+    clickedBtn.style.transform = 'scale(1.05)';
+    clickedBtn.style.boxShadow = '0 0 0 4px rgba(255,255,255,0.6)';
+
+    document.getElementById('selected-answer').value = val;
+
+    // El servidor verifica si es correcta — sin exponer la respuesta en el cliente
+    setTimeout(() => {
+      document.getElementById('answer-form').submit();
+    }, 900);
+  }
+</script>

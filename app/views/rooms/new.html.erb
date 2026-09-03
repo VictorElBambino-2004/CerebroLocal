@@ -1,0 +1,51 @@
+<!-- ── 👥 Partida Local ─────────────────────────────────── -->
+<div class="cl-option-card">
+  <h3>👥 Partida Local</h3>
+  <p>Juega solo o por turnos con amigos en esta pantalla (hasta 8 jugadores).</p>
+  <%= form_with url: games_path, method: :post, local: true do |f| %>
+    <div id="players-list">
+      <input class="cl-input" type="text" name="players[]" placeholder="Jugador 1" maxlength="30" autocomplete="off">
+    </div>
+    <div style="margin-bottom: 14px; text-align: left;">
+      <button type="button" class="cl-btn cl-btn--ghost" onclick="addPlayer()">➕ Agregar amigo</button>
+    </div>
+    <%= f.submit "⚡ Jugar Ahora", class: "cl-btn cl-btn--emerald" %>
+  <% end %>
+</div>
+
+<!-- ── 🖥️ Modo Anfitrión ─────────────────────────────────── -->
+<div class="cl-option-card">
+  <h3>🖥️ Modo Anfitrión (PIN)</h3>
+  <p>Genera un PIN para proyectar en pantalla grande. Tus amigos se unen desde sus celulares.</p>
+  <%= button_to "👑 Crear Sala con PIN", rooms_path, method: :post, class: "cl-btn cl-btn--indigo" %>
+</div>
+
+<!-- ── 📱 Unirse a una Sala ──────────────────────────────── -->
+<div class="cl-option-card" style="margin-bottom: 0;">
+  <h3>📱 Unirme con PIN</h3>
+  <%= form_with url: join_rooms_path, method: :post, local: true do |f| %>
+    <input class="cl-input" type="text" name="code" placeholder="PIN de 4 dígitos"
+           required maxlength="4" pattern="\d{4}" inputmode="numeric" autocomplete="off">
+    <input class="cl-input" type="text" name="name" placeholder="Tu apodo"
+           required maxlength="30" autocomplete="off">
+    <%= f.submit "🚀 Entrar a la Sala", class: "cl-btn cl-btn--sky" %>
+  <% end %>
+</div>
+
+<script>
+  let playerCount = 1;
+  function addPlayer() {
+    if (playerCount >= 8) return;
+    playerCount++;
+    const container = document.getElementById('players-list');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'players[]';
+    input.placeholder = `Jugador ${playerCount}`;
+    input.maxLength = 30;
+    input.autocomplete = 'off';
+    input.className = 'cl-input';
+    container.appendChild(input);
+    input.focus();
+  }
+</script>
