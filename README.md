@@ -26,3 +26,20 @@ bin/rails db:create db:migrate db:seed
 bin/rails server -b 0.0.0.0
 ```
 
+## Despliegue gratuito
+
+El archivo `render.yaml` prepara el servicio web para Render. Para mantener el
+despliegue en el nivel gratuito, crea la base PostgreSQL en Neon o Supabase y
+configura su URL como `DATABASE_URL` en Render.
+
+En Render, conecta este repositorio y define estas variables secretas:
+
+- `RAILS_MASTER_KEY`: contenido de `config/master.key`.
+- `DATABASE_URL`: URL de PostgreSQL.
+- `RAILS_ALLOWED_HOSTS`: dominio de Render, por ejemplo `cerebrolocal.onrender.com`.
+- `GEMINI_API_KEY`: opcional; sin ella se usan las preguntas precargadas.
+
+Render ejecutará las migraciones, cargará las preguntas iniciales y publicará
+la aplicación con una URL `onrender.com`. Ollama no funciona en `localhost` en
+un despliegue remoto; usa Gemini o un servidor Ollama accesible públicamente.
+

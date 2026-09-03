@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: cerebrolocal
+    runtime: ruby
+    plan: free
+    buildCommand: bundle install && bin/rails assets:precompile
+    startCommand: bin/rails db:prepare && bin/rails db:seed && bundle exec rails server -b 0.0.0.0 -p $PORT
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: FORCE_SSL
+        value: "true"
+      - key: ASSUME_SSL
+        value: "true"
+      - key: RAILS_ALLOWED_HOSTS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
