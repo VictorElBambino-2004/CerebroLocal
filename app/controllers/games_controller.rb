@@ -13,13 +13,14 @@ class GamesController < ApplicationController
 
   def create
     raw_players = params[:players].to_a.map { |n| ActionController::Base.helpers.strip_tags(n.to_s).strip }.reject(&:blank?).first(8)
-    raw_players = ["Jugador 1"] if raw_players.blank?
+    raw_players = [ "Jugador 1" ] if raw_players.blank?
 
     session[:players] = raw_players.map { |name| { "name" => name.truncate(30), "score" => 0 } }
     session[:current_turn] = 0
     session[:asked_question_ids] = []
     session[:asked_prompts] = []
     session[:question_count] = 0
+    session[:current_question_id] = nil
 
     redirect_to play_games_path
   end
@@ -36,32 +37,45 @@ class GamesController < ApplicationController
     end
 
     @current_player = session[:players][session[:current_turn]]
-    @category = CATEGORIES.sample
-    @question = AiQuestionGenerator.fetch_or_generate(
-      @category,
-      session[:asked_question_ids],
-      session[:asked_prompts]
-    )
+    @question = Question.find_by(id: session[:current_question_id])
 
-    session[:asked_question_ids] << @question.id
-    session[:asked_prompts] << @question.prompt
+    unless @question
+      @category = CATEGORIES.sample
+      @question = AiQuestionGenerator.fetch_or_generate(
+        @category,
+        session[:asked_question_ids],
+        session[:asked_prompts]
+      )
+
+      session[:current_question_id] = @question.id
+      session[:asked_question_ids] << @question.id
+      session[:asked_prompts] << @question.prompt
+    end
+
+    @category = @question.category
     @total_questions = max_questions
     @current_question_number = session[:question_count] + 1
   end
 
   def answer
-    question = Question.find_by(id: params[:question_id])
+    return redirect_to root_path if session[:players].blank?
+
+    question = Question.find_by(id: session[:current_question_id])
     player = session[:players][session[:current_turn]]
 
-    if question
-      if params[:answer] == question.correct_answer
-        player["score"] += 10
-        flash[:notice] = "¡Correcto #{player['name']}! (+10 pts)"
-      else
-        flash[:alert] = "Incorrecto #{player['name']}. Era: #{question.correct_answer}"
-      end
+    unless question && params[:question_id].to_i == question.id
+      flash[:alert] = "La pregunta ya no está disponible"
+      return redirect_to action: :play
     end
 
+    if params[:answer] == question.correct_answer
+      player["score"] += 10
+      flash[:notice] = "¡Correcto #{player['name']}! (+10 pts)"
+    else
+      flash[:alert] = "Incorrecto #{player['name']}. Era: #{question.correct_answer}"
+    end
+
+    session[:current_question_id] = nil
     session[:question_count] = session[:question_count].to_i + 1
 
     if session[:question_count] >= max_questions

@@ -170,9 +170,9 @@ class AiQuestionGenerator
     ]
   }.freeze
 
-  def self.fetch_or_generate(category, exclude_ids = [], exclude_prompts = [])
-    ReplenishQuestionsJob.perform_later(category, 1)
+  NoAvailableQuestionError = Class.new(StandardError)
 
+  def self.fetch_or_generate(category, exclude_ids = [], exclude_prompts = [])
     # 1. Buscar en la base de datos excluyendo IDs y prompts ya formulados
     query = Question.where(category: category)
     query = query.where.not(id: exclude_ids) if exclude_ids.present?
@@ -186,7 +186,7 @@ class AiQuestionGenerator
     return generated if generated.present? && !exclude_prompts.include?(generated.prompt)
 
     # 3. Fallback garantizado sin repetición
-    fallback_question(category, exclude_prompts)
+    fallback_question(category, exclude_prompts) || raise(NoAvailableQuestionError)
   end
 
   def self.generate(category, exclude_prompts = [])
@@ -206,7 +206,7 @@ class AiQuestionGenerator
     api_key = ENV["GEMINI_API_KEY"]
     return nil if api_key.blank?
 
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=#{api_key}"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     prompt_text = <<~PROMPT
       Genera 1 pregunta de trivia educativa de cultura general sobre #{category}.
       REGLAS:
@@ -224,6 +224,7 @@ class AiQuestionGenerator
       req.options.timeout = 5
       req.options.open_timeout = 2
       req.headers["Content-Type"] = "application/json"
+      req.headers["x-goog-api-key"] = api_key
       req.body = {
         contents: [{ parts: [{ text: prompt_text }] }],
         generationConfig: { responseMimeType: "application/json", temperature: 0.7 }
@@ -267,7 +268,8 @@ class AiQuestionGenerator
       }
     PROMPT
 
-    response = Faraday.post("http://localhost:11434/api/generate") do |req|
+    ollama_url = ENV.fetch("OLLAMA_URL", "http://localhost:11434").chomp("/")
+    response = Faraday.post("#{ollama_url}/api/generate") do |req|
       req.options.timeout = 5
       req.options.open_timeout = 2
       req.headers["Content-Type"] = "application/json"
@@ -299,13 +301,17 @@ class AiQuestionGenerator
 
   def self.valid_data?(data)
     return false unless data.is_a?(Hash)
-    return false unless data["prompt"].present? && data["options"].is_a?(Array) && data["options"].size == 4
-    return false unless data["options"].include?(data["correct_answer"])
+    return false unless data["prompt"].is_a?(String) && data["prompt"].present?
+    return false unless data["correct_answer"].is_a?(String)
+    return false unless data["options"].is_a?(Array) && data["options"].size == 4
 
     prompt = data["prompt"].to_s
     opts = data["options"].map(&:to_s)
 
     prompt.length >= 20 &&
+      opts.all?(&:present?) &&
+      opts.uniq.size == 4 &&
+      opts.include?(data["correct_answer"]) &&
       !opts.any? { |opt| opt.include?("?") || opt.downcase.include?("respuesta") }
   end
 
@@ -313,12 +319,10 @@ class AiQuestionGenerator
     pool = FALLBACKS[category] || FALLBACKS["Naturaleza"]
     available = pool.reject { |q| exclude_prompts.include?(q[:prompt]) }
 
-    if available.empty?
-      all_available = FALLBACKS.values.flatten.reject { |q| exclude_prompts.include?(q[:prompt]) }
-      data = all_available.sample || pool.sample
-    else
-      data = available.sample
-    end
+    all_available = FALLBACKS.values.flatten.reject { |q| exclude_prompts.include?(q[:prompt]) }
+    return nil if all_available.empty?
+
+    data = available.sample || all_available.sample
 
     target_category = FALLBACKS.find { |_cat, list| list.include?(data) }&.first || category
 
