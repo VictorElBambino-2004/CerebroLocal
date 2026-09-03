@@ -19,4 +19,4 @@
   </p>
 <% end %>
 
-<%= button_to "🚀 ¡Empezar Juego!", start_room_path(@room.code), method: :post, class: "cl-btn cl-btn--emerald" %>
+<%= button_to "🚀 ¡Empezar Juego!", start_room_path(@room.code, host_token: @room.host_token), method: :post, class: "cl-btn cl-btn--emerald" %>

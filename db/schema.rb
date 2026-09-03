@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_125444) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -26,8 +26,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_125444) do
     t.string "name"
     t.bigint "room_id", null: false
     t.integer "score"
+    t.string "token"
     t.datetime "updated_at", null: false
     t.index ["room_id"], name: "index_players_on_room_id"
+    t.index ["token"], name: "index_players_on_token", unique: true
   end
 
   create_table "questions", force: :cascade do |t|
@@ -42,8 +44,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_125444) do
   create_table "rooms", force: :cascade do |t|
     t.string "code"
     t.datetime "created_at", null: false
+    t.string "host_token"
     t.string "status"
     t.datetime "updated_at", null: false
+    t.index ["host_token"], name: "index_rooms_on_host_token", unique: true
   end
 
   add_foreign_key "players", "rooms"
